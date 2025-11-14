@@ -33,6 +33,7 @@ It transforms any topic into:
 ## 📂 Project Structure
 ai-lesson-generator/
 │
+
 ├── components/
 
 │ └── visuals/
@@ -51,21 +52,34 @@ ai-lesson-generator/
 
 │ └── MapRenderer.tsx
 │
+
 ├── lib/
+
 │ └── supabase/
+
 │ ├── supabaseClient.ts
+
 │ └── serverSupabase.ts
+
 │
 ├── pages/
+
 │ ├── index.tsx
+
 │ ├── lessons/
+
 │ │ └── [id].tsx
+
 │ └── api/
+
 │ └── generate.ts
+
 │
 ├── public/
+
 │
 ├── next.config.ts
+
 └── vercel.json
 
 ## 🧠 How the System Works
