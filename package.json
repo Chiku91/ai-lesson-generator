@@ -16,6 +16,8 @@
     "@supabase/supabase-js": "^2.81.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "langchain": "^1.0.4",
+    "langsmith": "^0.3.79",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.511.0",
     "next": "latest",
