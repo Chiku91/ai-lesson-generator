@@ -1,7 +1,9 @@
 # 🎓 NovaLearn AI — AI Lesson Generator  
 ### _Auto-generates lessons with explanations, visualizations, TSX code & quizzes
 
-Here is the Deployed Project link on Vercel : https://ai-lesson-generator-e4186lee9-priyanshu-satapathys-projects.vercel.app/
+Here is the Deployed Project link on Vercel : 
+
+https://ai-lesson-generator-e4186lee9-priyanshu-satapathys-projects.vercel.app/
 
 NovaLearn AI is a fully-automated lesson generator built using **Next.js 16**, **Supabase**, **OpenAI**, and fully typed **TSX visualization components**.
 
