@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    /* ---------- Core JS / TS ---------- */
+    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+
+    /* ---------- Language / Syntax ---------- */
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -16,27 +15,43 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+    "jsx": "react-jsx",
+
+    /* ---------- Next.js / React ---------- */
+    "types": ["node", "react", "react-dom"],
+    "plugins": [{ "name": "next" }],
+
+    /* ---------- Path Aliases ---------- */
+    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
-    }
+      "@/*": ["./*"],
+      "@/components/*": ["components/*"],
+      "@/pages/*": ["pages/*"],
+      "@/lib/*": ["lib/*"]
+    },
+
+    /* ---------- Type Declarations ---------- */
+    "typeRoots": ["./types", "./node_modules/@types"],
+
+    /* ---------- Linting / Safety ---------- */
+    "noFallthroughCasesInSwitch": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleDetection": "force",
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false
   },
+
+  /* ---------- Files to Include ---------- */
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "types/**/*.d.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+
+  /* ---------- Exclude ---------- */
+  "exclude": ["node_modules", ".next", "dist"]
 }

@@ -1,0 +1,240 @@
+/* 🌐 Global Styles for NovaLearn AI */
+
+/* Tailwind Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 🎨 Base layout & font setup */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #f9fafb;
+  color: #111827;
+  scroll-behavior: smooth;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* ⚡ Smooth mode transition */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.25s ease;
+}
+
+/* 🧱 Headings */
+h1,
+h2,
+h3,
+h4,
+h5 {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* 🌙 Dark theme overrides */
+html.dark {
+  background-color: #0f0f0f;
+  color: #f9fafb;
+}
+
+/* 💡 Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #6366f1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4f46e5;
+}
+
+/* 🎯 Button focus ring */
+button:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #6366f1;
+}
+
+/* ✨ AI Code Viewer */
+.ai-code-container {
+  background: radial-gradient(circle at top left, #1f1f1f, #141414);
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.2);
+  overflow: hidden;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  animation: fade-in 1s ease-in-out;
+}
+
+.ai-code-header {
+  background: #2d2d2d;
+  border-bottom: 1px solid #3b3b3b;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ai-code-header span {
+  font-size: 0.85rem;
+  font-family: monospace;
+  color: #a5b4fc;
+}
+
+.ai-badge {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* 🧠 Code Loader Pulse Animation */
+@keyframes pulse-glow {
+  0% {
+    opacity: 0.8;
+    text-shadow: 0 0 8px #6366f1;
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 18px #818cf8;
+  }
+  100% {
+    opacity: 0.8;
+    text-shadow: 0 0 8px #6366f1;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 1.6s ease-in-out infinite;
+}
+
+/* 🌈 Visualization container (after code view) */
+.visual-container {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.06);
+  padding: 1.25rem;
+  animation: fade-in 0.8s ease-in-out;
+}
+.dark .visual-container {
+  background: #18181b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 18px rgba(99, 102, 241, 0.2);
+}
+
+/* ⚙️ Message shown during rendering */
+.compiling-message {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #a5b4fc;
+  padding: 0.75rem;
+  font-family: monospace;
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+/* 💫 Fade & Transition Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 1s ease-in-out;
+}
+.animate-fade-out {
+  animation: fade-out 0.8s ease-in-out forwards;
+}
+
+/* 🌟 Divider between panels */
+.panel-divider {
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, #6366f1, transparent);
+  opacity: 0.5;
+}
+@media (max-width: 768px) {
+  .panel-divider {
+    display: none;
+  }
+}
+
+/* 🧠 Quiz Section Styling */
+.quiz-question {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+}
+.dark .quiz-question {
+  color: #f1f5f9;
+}
+
+.quiz-option {
+  background: #eef2ff;
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease;
+}
+.quiz-option:hover {
+  background: #e0e7ff;
+  transform: translateY(-2px);
+}
+.dark .quiz-option {
+  background: #1e1b4b;
+}
+.dark .quiz-option:hover {
+  background: #312e81;
+}
+
+/* ✅ Correct Answer */
+.quiz-option.correct {
+  background: #22c55e !important;
+  color: #fff !important;
+}
+
+/* ❌ Wrong Answer */
+.quiz-option.wrong {
+  background: #ef4444 !important;
+  color: #fff !important;
+}
+
+/* 🧩 Visualization placeholder (when AI hasn't rendered yet) */
+.visual-placeholder {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #6b7280;
+  padding: 1.25rem;
+  font-style: italic;
+  border-radius: 10px;
+  background: #f3f4f6;
+}
+.dark .visual-placeholder {
+  background: #1f2937;
+  color: #d1d5db;
+}
