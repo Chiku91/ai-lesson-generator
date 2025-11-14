@@ -1,5 +1,5 @@
 # 🎓 NovaLearn AI — AI Lesson Generator  
-### _Auto-generates lessons with explanations, visualizations, TSX code & quizzes
+### Auto-generates lessons with explanations, visualizations, TSX code & quizzes
 
 Here is the Deployed Project link on Vercel : 
 
