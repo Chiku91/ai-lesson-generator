@@ -34,26 +34,26 @@ It transforms any topic into:
 ai-lesson-generator/
 │
 ├── components/
-│   └── visuals/
-│       ├── VisualHost.tsx
-│       ├── FlowRenderer.tsx
-│       ├── CartesianRenderer.tsx
-│       ├── QuizRenderer.tsx
-│       ├── ImageRenderer.tsx
-│       ├── PlotlyRenderer.tsx
-│       └── MapRenderer.tsx
+│ └── visuals/
+│ ├── VisualHost.tsx
+│ ├── FlowRenderer.tsx
+│ ├── CartesianRenderer.tsx
+│ ├── QuizRenderer.tsx
+│ ├── ImageRenderer.tsx
+│ ├── PlotlyRenderer.tsx
+│ └── MapRenderer.tsx
 │
 ├── lib/
-│   ├── supabase/
-│   │   ├── supabaseClient.ts
-│   │   └── serverSupabase.ts
+│ └── supabase/
+│ ├── supabaseClient.ts
+│ └── serverSupabase.ts
 │
 ├── pages/
-│   ├── index.tsx
-│   ├── lessons/
-│   │   └── [id].tsx
-│   └── api/
-│       └── generate.ts
+│ ├── index.tsx
+│ ├── lessons/
+│ │ └── [id].tsx
+│ └── api/
+│ └── generate.ts
 │
 ├── public/
 │
