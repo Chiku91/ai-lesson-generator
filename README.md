@@ -153,6 +153,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role
 OPENAI_API_KEY=your_openai_key
 
+
+
 # 🚀 AI Lesson Generator — Setup & Deployment Guide
 
 This project allows users to generate **AI-powered lessons**, **visualizations**, **Cartesian diagrams**, **flowcharts**, **quizzes**, and **image-based explanations** using OpenAI + Supabase + Next.js 16.
