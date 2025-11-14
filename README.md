@@ -202,6 +202,6 @@ If you extend it, improve it, or build something amazing on top of it…always u
 ✨ **The world deserves to see what you create.**  
 
 ### 🛠 Built with passion, curiosity, and lots of ❤️  
-**by Priyanshu Satapathy**
+** by Priyanshu Satapathy**
 
 email- priyanshusat327@gmail.com
