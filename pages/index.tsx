@@ -42,7 +42,7 @@ export default function HomePage() {
     }
 
     setIsGenerating(true);
-    setStatusMessage("🧠 Sending request to AI model...");
+    setStatusMessage("🧠 Sending request...");
 
     try {
       const resp = await fetch("/api/generate", {
@@ -55,7 +55,7 @@ export default function HomePage() {
       if (!resp.ok) throw new Error(json.error || "Generation failed");
 
       const lessonId = json.id;
-      setStatusMessage("✨ Waiting for AI to finish generating...");
+      setStatusMessage("✨ Generating lesson...");
 
       const poll = setInterval(async () => {
         const { data: row, error } = await supabase
@@ -74,42 +74,45 @@ export default function HomePage() {
         if (row?.status === "generated") {
           clearInterval(poll);
           setIsGenerating(false);
-          setStatusMessage("✅ Generated! Redirecting...");
+          setStatusMessage("✅ Done! Redirecting...");
           router.push(`/lessons/${lessonId}`);
         } else if (row?.status === "failed") {
           clearInterval(poll);
           setIsGenerating(false);
-          setStatusMessage("❌ Failed. Check server logs.");
+          setStatusMessage("❌ Failed");
         }
       }, 3000);
     } catch (err) {
       setIsGenerating(false);
-      setStatusMessage("❌ Error sending request. Check server logs.");
+      setStatusMessage("❌ Error. Check logs.");
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 p-4 sm:p-6">
-      <div className="max-w-3xl mx-auto w-full">
-        <h1 className="text-3xl sm:text-4xl font-extrabold mb-6 text-indigo-400 text-center">
-          🤖🔮🧠 EduNova AI
+
+      <div className="max-w-4xl mx-auto space-y-6">
+
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-indigo-400 text-center">
+          🤖 EduNova AI
         </h1>
 
-        <div className="bg-gray-900 p-4 sm:p-5 rounded-xl mb-6 border border-gray-800">
-          <label className="block text-base sm:text-lg mb-2">Enter a topic</label>
+        {/* Input */}
+        <div className="bg-gray-900 p-4 rounded-xl border border-gray-800 space-y-3">
+          <label className="block text-base mb-1">Enter a topic</label>
 
           <textarea
             value={outline}
             onChange={(e) => setOutline(e.target.value)}
             rows={3}
-            className="w-full bg-gray-800 p-3 rounded text-gray-100 text-sm sm:text-base"
+            className="w-full bg-gray-800 p-3 rounded text-gray-100 text-sm"
             placeholder="e.g., Cartesian plane distance"
           />
 
           <button
             onClick={handleGenerate}
             disabled={isGenerating}
-            className={`w-full mt-3 py-3 rounded-lg font-semibold text-sm sm:text-base ${
+            className={`w-full py-3 rounded-lg font-semibold ${
               isGenerating
                 ? "bg-gray-600 cursor-not-allowed"
                 : "bg-indigo-600 hover:bg-indigo-500"
@@ -119,22 +122,21 @@ export default function HomePage() {
           </button>
 
           {statusMessage && (
-            <p className="mt-2 text-xs sm:text-sm text-indigo-300">{statusMessage}</p>
+            <p className="text-xs text-indigo-300">{statusMessage}</p>
           )}
         </div>
 
-        <div className="bg-gray-900 p-4 sm:p-5 rounded-xl border border-gray-800 overflow-x-auto">
-          <h2 className="text-xl sm:text-2xl text-indigo-300 mb-3 text-center sm:text-left">
-            Previously generated
-          </h2>
+        {/* History */}
+        <div className="bg-gray-900 p-4 rounded-xl border border-gray-800 overflow-x-auto">
+          <h2 className="text-xl text-indigo-300 mb-3">Previous lessons</h2>
 
           {lessons.length === 0 ? (
-            <div className="text-gray-500 italic text-center">No lessons yet</div>
+            <p className="text-gray-500 italic">No lessons yet</p>
           ) : (
-            <table className="w-full text-left text-xs sm:text-sm min-w-[600px]">
-              <thead>
-                <tr className="text-indigo-400 border-b border-gray-800">
-                  <th className="p-2">Lesson</th>
+            <table className="w-full min-w-[600px] text-sm">
+              <thead className="text-indigo-300 border-b border-gray-800">
+                <tr>
+                  <th className="p-2">Title</th>
                   <th className="p-2">Status</th>
                   <th className="p-2">Created</th>
                   <th className="p-2 text-right">Action</th>
@@ -147,32 +149,27 @@ export default function HomePage() {
                     key={lesson.id}
                     className="border-b border-gray-800 hover:bg-gray-800/40"
                   >
-                    <td className="p-2 truncate max-w-[160px] sm:max-w-none">
-                      {lesson.title ?? lesson.outline ?? "(untitled)"}
-                    </td>
-
+                    <td className="p-2">{lesson.title ?? lesson.outline}</td>
                     <td className="p-2">
                       {lesson.status === "generated" ? (
-                        <span className="text-green-400">✅ Generated</span>
+                        <span className="text-green-400">Done</span>
                       ) : lesson.status === "failed" ? (
-                        <span className="text-red-400">❌ Failed</span>
+                        <span className="text-red-400">Failed</span>
                       ) : (
-                        <span className="text-yellow-400">⏳ Generating...</span>
+                        <span className="text-yellow-400">Working...</span>
                       )}
                     </td>
-
-                    <td className="p-2 text-gray-400">{lesson.created_at ?? "—"}</td>
-
+                    <td className="p-2 text-gray-400">{lesson.created_at}</td>
                     <td className="p-2 text-right">
                       {lesson.status === "generated" ? (
                         <button
                           onClick={() => router.push(`/lessons/${lesson.id}`)}
-                          className="bg-indigo-600 px-3 py-1 rounded text-white text-xs sm:text-sm"
+                          className="px-3 py-1 bg-indigo-600 text-white rounded text-xs"
                         >
                           View
                         </button>
                       ) : (
-                        <span className="text-gray-500">—</span>
+                        "—"
                       )}
                     </td>
                   </tr>
@@ -181,6 +178,7 @@ export default function HomePage() {
             </table>
           )}
         </div>
+
       </div>
     </div>
   );
