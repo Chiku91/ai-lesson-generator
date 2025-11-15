@@ -210,7 +210,7 @@ This system represents the fusion of **AI**, **interactive education**, **visual
 If you extend it, improve it, or build something amazing on top of it…always up for suggestions and improvements
 ✨ **The world deserves to see what you create.**  
 
-### 🛠 Built with passion, curiosity, and lots of ❤️  
-** by Priyanshu Satapathy**
+### 🛠 Built with passion, curiosity, and lots of ❤️
+ by **Priyanshu Satapathy**
 
 email- priyanshusat327@gmail.com
