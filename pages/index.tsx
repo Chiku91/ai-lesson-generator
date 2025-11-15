@@ -20,19 +20,13 @@ export default function HomePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
 
-  // Fetch lessons
   async function fetchLessons() {
     const { data, error } = await supabase
       .from("lessons_v3")
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("❌ Supabase fetch error:", error);
-      return;
-    }
-
-    setLessons((data as Lesson[]) ?? []);
+    if (!error) setLessons((data as Lesson[]) ?? []);
   }
 
   useEffect(() => {
@@ -41,7 +35,6 @@ export default function HomePage() {
     return () => clearInterval(id);
   }, []);
 
-  // Generate lesson
   const handleGenerate = async () => {
     if (!outline.trim()) {
       alert("Please enter a topic.");
@@ -64,7 +57,6 @@ export default function HomePage() {
       const lessonId = json.id;
       setStatusMessage("✨ Waiting for AI to finish generating...");
 
-      // Poll for status
       const poll = setInterval(async () => {
         const { data: row, error } = await supabase
           .from("lessons_v3")
@@ -73,7 +65,6 @@ export default function HomePage() {
           .single<Lesson>();
 
         if (error) {
-          console.error("Polling error:", error);
           clearInterval(poll);
           setIsGenerating(false);
           setStatusMessage("❌ Polling error");
@@ -91,37 +82,34 @@ export default function HomePage() {
           setStatusMessage("❌ Failed. Check server logs.");
         }
       }, 3000);
-
-    } catch (err: any) {
-      console.error("🔥 Error generating:", err);
+    } catch (err) {
       setIsGenerating(false);
       setStatusMessage("❌ Error sending request. Check server logs.");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 p-6">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-extrabold mb-6 text-indigo-400">
+    <div className="min-h-screen bg-gray-950 text-gray-100 p-4 sm:p-6">
+      <div className="max-w-3xl mx-auto w-full">
+        <h1 className="text-3xl sm:text-4xl font-extrabold mb-6 text-indigo-400 text-center">
           🤖🔮🧠 EduNova AI
         </h1>
 
-        {/* Input box */}
-        <div className="bg-gray-900 p-5 rounded-xl mb-6 border border-gray-800">
-          <label className="block text-lg mb-2">Enter a topic</label>
+        <div className="bg-gray-900 p-4 sm:p-5 rounded-xl mb-6 border border-gray-800">
+          <label className="block text-base sm:text-lg mb-2">Enter a topic</label>
 
           <textarea
             value={outline}
             onChange={(e) => setOutline(e.target.value)}
             rows={3}
-            className="w-full bg-gray-800 p-3 rounded text-gray-100"
+            className="w-full bg-gray-800 p-3 rounded text-gray-100 text-sm sm:text-base"
             placeholder="e.g., Cartesian plane distance"
           />
 
           <button
             onClick={handleGenerate}
             disabled={isGenerating}
-            className={`w-full mt-3 py-3 rounded-lg font-semibold ${
+            className={`w-full mt-3 py-3 rounded-lg font-semibold text-sm sm:text-base ${
               isGenerating
                 ? "bg-gray-600 cursor-not-allowed"
                 : "bg-indigo-600 hover:bg-indigo-500"
@@ -131,18 +119,19 @@ export default function HomePage() {
           </button>
 
           {statusMessage && (
-            <p className="mt-2 text-sm text-indigo-300">{statusMessage}</p>
+            <p className="mt-2 text-xs sm:text-sm text-indigo-300">{statusMessage}</p>
           )}
         </div>
 
-        {/* Lessons List */}
-        <div className="bg-gray-900 p-5 rounded-xl border border-gray-800">
-          <h2 className="text-2xl text-indigo-300 mb-3">Previously generated</h2>
+        <div className="bg-gray-900 p-4 sm:p-5 rounded-xl border border-gray-800 overflow-x-auto">
+          <h2 className="text-xl sm:text-2xl text-indigo-300 mb-3 text-center sm:text-left">
+            Previously generated
+          </h2>
 
           {lessons.length === 0 ? (
-            <div className="text-gray-500 italic">No lessons yet</div>
+            <div className="text-gray-500 italic text-center">No lessons yet</div>
           ) : (
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-xs sm:text-sm min-w-[600px]">
               <thead>
                 <tr className="text-indigo-400 border-b border-gray-800">
                   <th className="p-2">Lesson</th>
@@ -153,12 +142,12 @@ export default function HomePage() {
               </thead>
 
               <tbody>
-                {lessons.map((lesson: Lesson) => (
+                {lessons.map((lesson) => (
                   <tr
                     key={lesson.id}
                     className="border-b border-gray-800 hover:bg-gray-800/40"
                   >
-                    <td className="p-2">
+                    <td className="p-2 truncate max-w-[160px] sm:max-w-none">
                       {lesson.title ?? lesson.outline ?? "(untitled)"}
                     </td>
 
@@ -172,15 +161,13 @@ export default function HomePage() {
                       )}
                     </td>
 
-                    <td className="p-2 text-gray-400">
-                      {lesson.created_at ?? "—"}
-                    </td>
+                    <td className="p-2 text-gray-400">{lesson.created_at ?? "—"}</td>
 
                     <td className="p-2 text-right">
                       {lesson.status === "generated" ? (
                         <button
                           onClick={() => router.push(`/lessons/${lesson.id}`)}
-                          className="bg-indigo-600 px-3 py-1 rounded text-white"
+                          className="bg-indigo-600 px-3 py-1 rounded text-white text-xs sm:text-sm"
                         >
                           View
                         </button>

@@ -12,44 +12,97 @@ const PlotlyRenderer = dynamic(() => import("./PlotlyRenderer"), { ssr: false })
 const ImageRenderer = dynamic(() => import("./ImageRenderer"), { ssr: false });
 
 export default function VisualHost({ schema }: { schema?: any }) {
-  if (!schema) return <div className="p-4 text-gray-500">No schema</div>;
+  if (!schema)
+    return (
+      <div className="p-4 text-gray-500 text-center text-sm sm:text-base">
+        No schema
+      </div>
+    );
 
-  // Accept both standard places: schema.type or visualization_type
   let type = String(schema.type || schema.visualization_type || "").toLowerCase();
 
-  // Repair: if schema contains nodes+edges but no type, assume flow
   if (!type) {
     if (schema?.data_spec?.nodes && schema?.data_spec?.edges) type = "flow";
     else if (schema?.data_spec?.questions) type = "quiz";
     else if (schema?.data_spec?.A && schema?.data_spec?.B) type = "cartesian";
   }
 
-  // Force circular layout for common cycle keywords (also if generate.ts marked layout_kind)
   const title = String(schema.title ?? "").toLowerCase();
   const layoutPrefs = schema.layout ?? {};
-  if ((title.includes("cycle") || title.includes("water cycle") || layoutPrefs?.layout_kind === "circular") && type === "flow") {
+
+  if (
+    (title.includes("cycle") || title.includes("water cycle") || layoutPrefs?.layout_kind === "circular") &&
+    type === "flow"
+  ) {
     schema.layout = { ...(schema.layout || {}), layout_kind: "circular" };
   }
 
-  switch (type) {
-    case "cartesian":
-      return <CartesianRenderer schema={schema} />;
-    case "flow":
-      return <FlowRenderer schema={schema} />;
-    case "map":
-      return <MapRenderer schema={schema} />;
-    case "image":
-      return <ImageRenderer schema={schema} />;
-    case "quiz":
-      return <QuizRenderer schema={schema} />;
-    case "plotly":
-      return <PlotlyRenderer schema={schema} />;
-    default:
-      // best-effort fallbacks:
-      if (schema?.data_spec?.questions) return <QuizRenderer schema={schema} />;
-      if (schema?.data_spec?.nodes && schema?.data_spec?.edges) return <FlowRenderer schema={schema} />;
-      if (schema?.data_spec?.A && schema?.data_spec?.B) return <CartesianRenderer schema={schema} />;
+  return (
+    <div className="w-full max-w-full overflow-x-auto p-2 sm:p-4">
+      {/* Each renderer placed inside a responsive wrapper */}
+      <div className="w-full max-w-full flex justify-center items-center">
+        {(() => {
+          switch (type) {
+            case "cartesian":
+              return (
+                <div className="w-full sm:w-auto max-w-full overflow-x-auto">
+                  <CartesianRenderer schema={schema} />
+                </div>
+              );
 
-      return <div className="text-red-400 p-4">Unknown visualization type: <b>{String(type)}</b></div>;
-  }
+            case "flow":
+              return (
+                <div className="w-full max-w-full overflow-x-auto">
+                  <FlowRenderer schema={schema} />
+                </div>
+              );
+
+            case "map":
+              return (
+                <div className="w-full max-w-full overflow-x-auto">
+                  <MapRenderer schema={schema} />
+                </div>
+              );
+
+            case "image":
+              return (
+                <div className="w-full max-w-full flex justify-center">
+                  <ImageRenderer schema={schema} />
+                </div>
+              );
+
+            case "quiz":
+              return (
+                <div className="w-full max-w-full sm:max-w-md mx-auto">
+                  <QuizRenderer schema={schema} />
+                </div>
+              );
+
+            case "plotly":
+              return (
+                <div className="w-full max-w-full overflow-x-auto">
+                  <PlotlyRenderer schema={schema} />
+                </div>
+              );
+
+            default:
+              if (schema?.data_spec?.questions)
+                return <QuizRenderer schema={schema} />;
+
+              if (schema?.data_spec?.nodes && schema?.data_spec?.edges)
+                return <FlowRenderer schema={schema} />;
+
+              if (schema?.data_spec?.A && schema?.data_spec?.B)
+                return <CartesianRenderer schema={schema} />;
+
+              return (
+                <div className="text-red-400 p-4 text-center text-sm sm:text-base">
+                  Unknown visualization type: <b>{String(type)}</b>
+                </div>
+              );
+          }
+        })()}
+      </div>
+    </div>
+  );
 }

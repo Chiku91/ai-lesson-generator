@@ -23,9 +23,6 @@ async function heliconeLog(payload: any) {
   } catch {}
 }
 
-// ---------------------------------------------------------------------------
-// OpenAI via Helicone Gateway
-// ---------------------------------------------------------------------------
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: "https://oai.helicone.ai/v1",
@@ -56,9 +53,7 @@ function validateTSX(code: string) {
   return { ok: errors.length === 0, errors };
 }
 
-// ---------------------------------------------------------------------------
-// **NEW FIXED SYSTEM PROMPT** — Guarantees correct visualization_type
-// ---------------------------------------------------------------------------
+
 const SYSTEM_PROMPT = `
 You must ALWAYS return **exactly one JSON object**.  
 If you violate ANY rule, return ONLY:
@@ -147,9 +142,6 @@ STRICT RULES (follow EXACTLY):
    }
 `;
 
-// ---------------------------------------------------------------------------
-// Fallback image
-// ---------------------------------------------------------------------------
 function fallbackImages(topic: string) {
   return {
     type: "image",
@@ -167,9 +159,7 @@ function fallbackImages(topic: string) {
   };
 }
 
-// ---------------------------------------------------------------------------
-// MAIN HANDLER
-// ---------------------------------------------------------------------------
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log("🔥 Helicone Key:", !!process.env.HELICONE_API_KEY);
   console.log("🔥 OpenAI Key:", !!process.env.OPENAI_API_KEY);
@@ -207,9 +197,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     topic.includes("pictures") ||
     topic.includes("photos");
 
-  // -----------------------------------------------------------------------
-  // LLM CALL
-  // -----------------------------------------------------------------------
+  
   async function callAI() {
     const completion = await openai.chat.completions.create(
       {
@@ -235,9 +223,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return content;
   }
 
-  // -----------------------------------------------------------------------
-  // MULTI-ATTEMPT GENERATION
-  // -----------------------------------------------------------------------
   let final: any = null;
 
   for (let attempt = 1; attempt <= 6; attempt++) {
