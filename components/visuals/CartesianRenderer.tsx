@@ -1,7 +1,7 @@
 // components/visuals/CartesianRenderer.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
@@ -17,10 +17,10 @@ export default function CartesianRenderer({ schema }: { schema?: any }) {
   const [precision, setPrecision] = useState<number>(2);
   const [showSteps, setShowSteps] = useState(true);
 
-  const dx = B.x - A.x;
-  const dy = B.y - A.y;
+  const dx = useMemo(() => B.x - A.x, [A, B]);
+  const dy = useMemo(() => B.y - A.y, [A, B]);
   const distance = Math.sqrt(dx * dx + dy * dy);
-  const midpoint = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
+  const midpoint = useMemo(() => ({ x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 }), [A, B]);
 
   const traceLine = {
     x: [A.x, B.x],
@@ -43,71 +43,83 @@ export default function CartesianRenderer({ schema }: { schema?: any }) {
     textposition: "bottom center",
   };
 
+  // Container: ensures visible area on mobile. Option B: visualization is narrow on phones.
+  // Provide a consistent min-height so Plotly has room to render.
   return (
-    <div className="space-y-4">
-      <div className="bg-white p-4 rounded shadow">
-        <h4 className="font-semibold text-gray-700 mb-2">Point Inputs</h4>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs text-gray-600">Point A (x, y)</label>
-            <div className="flex gap-2 mt-1">
-              <input className="w-16 px-2 py-1 border rounded text-black" type="number" value={A.x} onChange={(e) => setA({ ...A, x: Number(e.target.value) })} />
-              <input className="w-16 px-2 py-1 border rounded text-black" type="number" value={A.y} onChange={(e) => setA({ ...A, y: Number(e.target.value) })} />
-            </div>
+    <div className="bg-white/5 p-2 rounded-lg border border-gray-800 min-h-[260px] sm:min-h-[320px]">
+      {/* Controls */}
+      <div className="mb-3">
+        <h4 className="font-semibold text-sm text-gray-200 mb-2">Points</h4>
+        <div className="flex gap-2 items-center">
+          <div className="flex items-center gap-2">
+            <input
+              className="w-14 px-2 py-1 rounded bg-white text-black"
+              type="number"
+              value={A.x}
+              onChange={(e) => setA({ ...A, x: Number(e.target.value) })}
+            />
+            <input
+              className="w-14 px-2 py-1 rounded bg-white text-black"
+              type="number"
+              value={A.y}
+              onChange={(e) => setA({ ...A, y: Number(e.target.value) })}
+            />
           </div>
-          <div>
-            <label className="block text-xs text-gray-600">Point B (x, y)</label>
-            <div className="flex gap-2 mt-1">
-              <input className="w-16 px-2 py-1 border rounded text-black" type="number" value={B.x} onChange={(e) => setB({ ...B, x: Number(e.target.value) })} />
-              <input className="w-16 px-2 py-1 border rounded text-black" type="number" value={B.y} onChange={(e) => setB({ ...B, y: Number(e.target.value) })} />
-            </div>
+          <div className="flex items-center gap-2">
+            <input
+              className="w-14 px-2 py-1 rounded bg-white text-black"
+              type="number"
+              value={B.x}
+              onChange={(e) => setB({ ...B, x: Number(e.target.value) })}
+            />
+            <input
+              className="w-14 px-2 py-1 rounded bg-white text-black"
+              type="number"
+              value={B.y}
+              onChange={(e) => setB({ ...B, y: Number(e.target.value) })}
+            />
           </div>
-        </div>
-
-        <div className="mt-3">
-          <label className="text-xs text-gray-600">Precision: <span className="text-black font-semibold">{precision}</span></label>
-          <input className="w-full mt-1" type="range" min={0} max={4} step={1} value={precision} onChange={(e) => setPrecision(Number(e.target.value))} />
-        </div>
-
-        <div className="mt-3 flex gap-2">
-          <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => setShowSteps((s) => !s)}>{showSteps ? "Hide Steps" : "Show Steps"}</button>
-          <button className="px-3 py-1 bg-green-600 text-white rounded" onClick={() => { const r = () => Math.floor(Math.random() * 11 - 5); setA({ x: r(), y: r() }); setB({ x: r(), y: r() }); }}>Randomize</button>
         </div>
       </div>
 
-      <div className="bg-white p-3 rounded shadow">
+      {/* Plotly area: responsive */}
+      <div className="w-full h-[220px] sm:h-[320px]">
         <Plot
           data={[traceLine, traceMid]}
           layout={{
-            width: schema?.layout?.width ?? 420,
-            height: schema?.layout?.height ?? 380,
+            autosize: true,
+            margin: { l: 36, r: 12, t: 12, b: 36 },
             xaxis: { zeroline: true, dtick: 1 },
             yaxis: { zeroline: true, dtick: 1 },
-            margin: { l: 40, r: 20, t: 20, b: 40 },
-            paper_bgcolor: "#ffffff",
-            plot_bgcolor: "#fff",
-            font: { color: "#111" },
+            paper_bgcolor: "transparent",
+            plot_bgcolor: "transparent",
+            font: { color: "#e6edf3" },
+            // width/height removed in favor of autosize + container styling
           }}
+          useResizeHandler={true}
+          style={{ width: "100%", height: "100%" }}
           config={{ responsive: true }}
         />
-        <div className="mt-3 text-sm text-gray-800">
-          <div>dx: <span className="text-black font-semibold">{dx.toFixed(precision)}</span></div>
-          <div>dy: <span className="text-black font-semibold">{dy.toFixed(precision)}</span></div>
-          <div>Distance: <span className="text-black font-semibold">{distance.toFixed(precision)}</span></div>
-          <div>Midpoint: <span className="text-black font-semibold">({midpoint.x.toFixed(precision)}, {midpoint.y.toFixed(precision)})</span></div>
-        </div>
-
-        {showSteps && (
-          <div className="mt-3 p-2 bg-gray-50 border rounded text-xs text-gray-700">
-            <div className="font-medium mb-1">Steps</div>
-            <ol className="list-decimal list-inside">
-              <li>Compute dx = x₂ − x₁ = {B.x} − {A.x} = {dx.toFixed(precision)}</li>
-              <li>Compute dy = y₂ − y₁ = {B.y} − {A.y} = {dy.toFixed(precision)}</li>
-              <li>Distance = √(dx² + dy²) = {distance.toFixed(precision)}</li>
-            </ol>
-          </div>
-        )}
       </div>
+
+      {/* stats */}
+      <div className="mt-2 text-xs text-gray-200">
+        <div>dx: <span className="font-semibold">{dx.toFixed(precision)}</span></div>
+        <div>dy: <span className="font-semibold">{dy.toFixed(precision)}</span></div>
+        <div>Distance: <span className="font-semibold">{distance.toFixed(precision)}</span></div>
+        <div>Midpoint: <span className="font-semibold">({midpoint.x.toFixed(precision)}, {midpoint.y.toFixed(precision)})</span></div>
+      </div>
+
+      {/* steps */}
+      {showSteps && (
+        <div className="mt-2 text-xs text-gray-300 bg-white/3 p-2 rounded">
+          <ol className="list-decimal list-inside">
+            <li>dx = x₂ − x₁ = {B.x} − {A.x} = {dx.toFixed(precision)}</li>
+            <li>dy = y₂ − y₁ = {B.y} − {A.y} = {dy.toFixed(precision)}</li>
+            <li>Distance = √(dx² + dy²) = {distance.toFixed(precision)}</li>
+          </ol>
+        </div>
+      )}
     </div>
   );
 }

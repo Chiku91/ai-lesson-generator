@@ -23,10 +23,13 @@ export interface FlowSchema {
   explanatory_markup?: string;
 }
 
+/**
+ * FlowRenderer uses an SVG. For responsiveness:
+ * - we provide a container with a min-height (so it always has space)
+ * - we use viewBox to make the SVG scale to container width
+ * - nodes are positioned using layout width/height but the SVG scales
+ */
 export default function FlowRenderer({ schema }: { schema?: FlowSchema }) {
-  /* -------------------------
-     SAFE NODE NORMALIZATION
-  --------------------------*/
   const rawNodes = schema?.data_spec?.nodes;
   const nodes: FlowNode[] = Array.isArray(rawNodes)
     ? rawNodes.filter((n) => n && typeof n.id === "string")
@@ -35,9 +38,6 @@ export default function FlowRenderer({ schema }: { schema?: FlowSchema }) {
         { id: "end", label: "End" },
       ];
 
-  /* -------------------------
-     SAFE EDGE NORMALIZATION
-  --------------------------*/
   function normalizeEdges(input: any): Array<[string, string]> {
     const result: Array<[string, string]> = [];
     if (!input) return result;
@@ -72,9 +72,7 @@ export default function FlowRenderer({ schema }: { schema?: FlowSchema }) {
 
   const edges = normalizeEdges(schema?.data_spec?.edges);
 
-  /* -------------------------
-     VERTICAL LAYOUT
-  --------------------------*/
+  // Responsive layout defaults
   const width = schema?.layout?.width ?? 600;
   const height = schema?.layout?.height ?? 900;
 
@@ -103,115 +101,89 @@ export default function FlowRenderer({ schema }: { schema?: FlowSchema }) {
     const ex = to.x + nodeW / 2;
     const ey = to.y;
     const mid = (sy + ey) / 2;
-
     return `M ${sx} ${sy} C ${sx} ${mid}, ${ex} ${mid}, ${ex} ${ey}`;
   };
 
+  // Container ensures minimum visible area on mobile while the SVG scales to fit width
   return (
-    <div>
+    <div className="bg-white/3 rounded border border-gray-800 p-2 min-h-[260px] sm:min-h-[360px]">
       <style>{`
         .edge-path {
-          stroke: #4F46E5;
+          stroke: #7c3aed;
           stroke-width: 3;
           fill: none;
           stroke-linecap: round;
           stroke-dasharray: 600;
           stroke-dashoffset: 600;
-          animation: drawEdge 1s ease forwards;
+          animation: drawEdge 0.9s ease forwards;
         }
         @keyframes drawEdge { to { stroke-dashoffset: 0; } }
-
-        .node-box {
-          cursor: pointer;
-          transition: 0.25s;
-          filter: drop-shadow(0 4px 12px rgba(0,0,0,0.18));
-        }
-        .node-box:hover {
-          transform: scale(1.04);
-          filter: drop-shadow(0 10px 22px rgba(79,70,229,0.3));
-        }
-        .selected {
-          transform: scale(1.06);
-          stroke-width: 2.5;
-        }
+        .node-box { cursor: pointer; transition: 0.25s; }
+        .node-box:hover { transform: scale(1.02); }
       `}</style>
 
-      <svg width="100%" height={height}>
-        <defs>
-          <marker
-            id="arrow"
-            markerWidth="12"
-            markerHeight="12"
-            refX="6"
-            refY="6"
-            orient="auto"
-          >
-            <path d="M0,0 L12,6 L0,12 z" fill="#4F46E5" />
-          </marker>
-        </defs>
+      {/* Responsive SVG using viewBox - it will scale to the container width */}
+      <div style={{ width: "100%", height: "100%", minHeight: 220 }}>
+        <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet" style={{ width: "100%", height: "100%" }}>
+          <defs>
+            <marker id="arrow" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
+              <path d="M0,0 L12,6 L0,12 z" fill="#7c3aed" />
+            </marker>
+          </defs>
 
-        {/* ---------- EDGES ---------- */}
-        {edges.map(([from, to], i) => {
-          const p1 = positions.get(from);
-          const p2 = positions.get(to);
-          if (!p1 || !p2) return null;
-
-          return (
-            <path
-              key={i}
-              d={curve(p1, p2)}
-              className="edge-path"
-              markerEnd="url(#arrow)"
-              style={{ animationDelay: `${i * 0.15}s` }}
-            />
-          );
-        })}
-
-        {/* ---------- NODES ---------- */}
-        {nodes.map((n) => {
-          const p = positions.get(n.id)!;
-
-          return (
-            <g key={n.id} transform={`translate(${p.x}, ${p.y})`}>
-              <rect
-                width={nodeW}
-                height={nodeH}
-                rx={14}
-                fill={n.color ?? "#EEF2FF"}
-                stroke="#4F46E5"
-                strokeWidth={selected === n.id ? 2.2 : 1.4}
-                className={`node-box ${selected === n.id ? "selected" : ""}`}
-                onClick={() => setSelected(selected === n.id ? null : n.id)}
+          {/* edges */}
+          {edges.map(([from, to], i) => {
+            const p1 = positions.get(from);
+            const p2 = positions.get(to);
+            if (!p1 || !p2) return null;
+            return (
+              <path
+                key={i}
+                d={curve(p1, p2)}
+                className="edge-path"
+                markerEnd="url(#arrow)"
+                style={{ animationDelay: `${i * 0.12}s` }}
               />
-              <text
-                x={nodeW / 2}
-                y={nodeH / 2 + 5}
-                textAnchor="middle"
-                fill="#0f172a"
-                style={{ fontWeight: 700, fontSize: 17, pointerEvents: "none" }}
-              >
-                {n.label}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+            );
+          })}
+
+          {/* nodes */}
+          {nodes.map((n) => {
+            const p = positions.get(n.id)!;
+            return (
+              <g key={n.id} transform={`translate(${p.x}, ${p.y})`}>
+                <rect
+                  width={nodeW}
+                  height={nodeH}
+                  rx={14}
+                  fill={n.color ?? "#eef2ff"}
+                  stroke="#7c3aed"
+                  strokeWidth={1.4}
+                  className="node-box"
+                  onClick={() => setSelected(selected === n.id ? null : n.id)}
+                />
+                <text
+                  x={nodeW / 2}
+                  y={nodeH / 2 + 6}
+                  textAnchor="middle"
+                  fill="#0f172a"
+                  style={{ fontWeight: 700, fontSize: 17, pointerEvents: "none" }}
+                >
+                  {n.label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
 
       {selected && (
-        <div className="mt-4 p-4 bg-gray-100 rounded text-gray-800">
-          <h3 className="font-bold text-lg">
-            {nodes.find((x) => x.id === selected)?.label}
-          </h3>
-          <p className="mt-1 text-sm">
-            {nodes.find((x) => x.id === selected)?.description ??
-              "No description available."}
+        <div className="mt-3 p-2 bg-white/5 rounded text-sm">
+          <h3 className="font-bold">{nodes.find((x) => x.id === selected)?.label}</h3>
+          <p className="text-xs mt-1">
+            {nodes.find((x) => x.id === selected)?.description ?? "No description available."}
           </p>
-          <button
-            className="mt-2 px-3 py-1 bg-indigo-600 text-white rounded"
-            onClick={() => setSelected(null)}
-          >
-            Close
-          </button>
+          <button className="mt-2 px-3 py-1 bg-indigo-600 text-white rounded" onClick={() => setSelected(null)}>Close</button>
         </div>
       )}
     </div>

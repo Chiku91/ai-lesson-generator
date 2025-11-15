@@ -11,6 +11,16 @@ const QuizRenderer = dynamic(() => import("./QuizRenderer"), { ssr: false });
 const PlotlyRenderer = dynamic(() => import("./PlotlyRenderer"), { ssr: false });
 const ImageRenderer = dynamic(() => import("./ImageRenderer"), { ssr: false });
 
+/**
+ * VisualHost renders the correct renderer and ensures the visualization
+ * sits to the right and shrinks on small screens (Option B).
+ *
+ * Notes:
+ * - The visualization wrapper has responsive widths so it remains right-aligned
+ *   but becomes narrower on small viewports.
+ * - Each renderer should still provide its own min-height; this wrapper
+ *   ensures width/placement.
+ */
 export default function VisualHost({ schema }: { schema?: any }) {
   if (!schema)
     return (
@@ -31,80 +41,62 @@ export default function VisualHost({ schema }: { schema?: any }) {
   const layoutPrefs = schema.layout ?? {};
 
   if (
-    (title.includes("cycle") || layoutPrefs?.layout_kind === "circular") &&
+    (title.includes("cycle") || title.includes("water cycle") || layoutPrefs?.layout_kind === "circular") &&
     type === "flow"
   ) {
     schema.layout = { ...(schema.layout || {}), layout_kind: "circular" };
   }
 
-  // ⭐ UNIVERSAL SAFE HEIGHT for all renderers
-  const baseWrapper = "w-full max-w-full overflow-x-auto min-h-[320px] sm:min-h-[480px]";
+  // Option B widths:
+  // - very small devices: visualization is narrow but visible
+  // - medium+ devices: visualization occupies up to 40% of width
+  // The wrapper also ensures a min height (child renderers should also set heights).
+  const vizWrapperClass =
+    "flex-shrink-0 w-36 sm:w-56 md:w-1/3 lg:w-2/5 xl:w-2/5 p-2";
 
-  return (
-    <div className="w-full max-w-full p-2 sm:p-4">
-      <div className="w-full flex justify-center items-center">
-        {(() => {
-          switch (type) {
-            case "cartesian":
-              return (
-                <div className={baseWrapper}>
-                  <CartesianRenderer schema={schema} />
-                </div>
-              );
+  switch (type) {
+    case "cartesian":
+      return (
+        <div className={vizWrapperClass}>
+          <CartesianRenderer schema={schema} />
+        </div>
+      );
+    case "flow":
+      return (
+        <div className={vizWrapperClass}>
+          <FlowRenderer schema={schema} />
+        </div>
+      );
+    case "map":
+      return (
+        <div className={vizWrapperClass}>
+          <MapRenderer schema={schema} />
+        </div>
+      );
+    case "image":
+      return (
+        <div className={vizWrapperClass}>
+          <ImageRenderer schema={schema} />
+        </div>
+      );
+    case "quiz":
+      return (
+        <div className={vizWrapperClass}>
+          <QuizRenderer schema={schema} />
+        </div>
+      );
+    case "plotly":
+      return (
+        <div className={vizWrapperClass}>
+          <PlotlyRenderer schema={schema} />
+        </div>
+      );
+    default:
+      // best-effort fallbacks
+      if (schema?.data_spec?.questions) return <QuizRenderer schema={schema} />;
+      if (schema?.data_spec?.nodes && schema?.data_spec?.edges) return <FlowRenderer schema={schema} />;
+      if (schema?.data_spec?.A && schema?.data_spec?.B) return <CartesianRenderer schema={schema} />;
 
-            case "flow":
-              return (
-                <div className={baseWrapper}>
-                  <FlowRenderer schema={schema} />
-                </div>
-              );
-
-            case "map":
-              return (
-                <div className={baseWrapper}>
-                  <MapRenderer schema={schema} />
-                </div>
-              );
-
-            case "image":
-              return (
-                <div className="w-full max-w-full flex justify-center min-h-[250px]">
-                  <ImageRenderer schema={schema} />
-                </div>
-              );
-
-            case "quiz":
-              return (
-                <div className="w-full max-w-full sm:max-w-md mx-auto min-h-[200px]">
-                  <QuizRenderer schema={schema} />
-                </div>
-              );
-
-            case "plotly":
-              return (
-                <div className={baseWrapper}>
-                  <PlotlyRenderer schema={schema} />
-                </div>
-              );
-
-            default:
-              if (schema?.data_spec?.questions)
-                return <QuizRenderer schema={schema} />;
-
-              if (schema?.data_spec?.nodes && schema?.data_spec?.edges)
-                return <FlowRenderer schema={schema} />;
-
-              if (schema?.data_spec?.A && schema?.data_spec?.B)
-                return <CartesianRenderer schema={schema} />;
-
-              return (
-                <div className="text-red-400 p-4 text-center text-sm sm:text-base">
-                  Unknown visualization type: <b>{String(type)}</b>
-                </div>
-              );
-          }
-        })()}
-      </div>
-    </div>
-  );
+      return <div className="text-red-400 p-4">Unknown visualization type: <b>{String(type)}</b></div>;
+  }
 }
