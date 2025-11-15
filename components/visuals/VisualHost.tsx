@@ -6,46 +6,59 @@ import dynamic from "next/dynamic";
 
 const CartesianRenderer = dynamic(() => import("./CartesianRenderer"), { ssr: false });
 const FlowRenderer = dynamic(() => import("./FlowRenderer"), { ssr: false });
-const MapRenderer = dynamic(() => import("./MapRenderer"), { ssr: false });
 const QuizRenderer = dynamic(() => import("./QuizRenderer"), { ssr: false });
-const PlotlyRenderer = dynamic(() => import("./PlotlyRenderer"), { ssr: false });
 const ImageRenderer = dynamic(() => import("./ImageRenderer"), { ssr: false });
 
+// ✅ SAFE MapRenderer WITHOUT .catch()
+const MapRenderer = dynamic(
+  async () => {
+    try {
+      return await import("./MapRenderer");
+    } catch (e) {
+      return {
+        default: () => (
+          <div className="text-red-400 p-3">
+            Map visualization is not available.
+          </div>
+        ),
+      };
+    }
+  },
+  { ssr: false }
+);
+
+// Plotly uses CartesianRenderer fallback
+const PlotlyRenderer = CartesianRenderer;
+
 export default function VisualHost({ schema }: { schema?: any }) {
-  if (!schema)
-    return <div className="p-4 text-gray-400 text-center">No schema</div>;
+  if (!schema) {
+    return <div className="p-3 text-gray-400 text-sm">No schema</div>;
+  }
 
-  let type = schema.type || schema.visualization_type || "";
+  let type = String(schema.type || schema.visualization_type || "").toLowerCase();
 
-  // 🟣 Responsive layout:
-  // Mobile: one column
-  // Desktop: 2 columns (explanation left, visualization right)
+  // Auto-detect type
+  if (!type) {
+    if (schema?.data_spec?.nodes && schema?.data_spec?.edges) type = "flow";
+    else if (schema?.data_spec?.questions) type = "quiz";
+    else if (schema?.data_spec?.A && schema?.data_spec?.B) type = "cartesian";
+    else if (schema?.data_spec?.images) type = "image";
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+    <div className="w-full h-full">
+      {type === "cartesian" && <CartesianRenderer schema={schema} />}
+      {type === "flow" && <FlowRenderer schema={schema} />}
+      {type === "image" && <ImageRenderer schema={schema} />}
+      {type === "quiz" && <QuizRenderer schema={schema} />}
+      {type === "map" && <MapRenderer schema={schema} />}
+      {type === "plotly" && <PlotlyRenderer schema={schema} />}
 
-      {/* Explanation */}
-      <div className="order-1 md:order-none space-y-4 text-sm text-gray-200 leading-relaxed">
-        <div
-          dangerouslySetInnerHTML={{
-            __html: schema.explanatory_markup || "<p>No explanation available.</p>",
-          }}
-        />
-      </div>
-
-      {/* Visualization */}
-      <div className="order-2 md:order-none">
-        {type === "cartesian" && <CartesianRenderer schema={schema} />}
-        {type === "flow" && <FlowRenderer schema={schema} />}
-        {type === "image" && <ImageRenderer schema={schema} />}
-        {type === "quiz" && <QuizRenderer schema={schema} />}
-        {type === "plotly" && <PlotlyRenderer schema={schema} />}
-
-        {/* Auto-detect fallback */}
-        {!type && schema?.data_spec?.A && <CartesianRenderer schema={schema} />}
-        {!type && schema?.data_spec?.nodes && <FlowRenderer schema={schema} />}
-        {!type && schema?.data_spec?.questions && <QuizRenderer schema={schema} />}
-      </div>
-
+      {/* fallbacks */}
+      {!type && schema?.data_spec?.A && <CartesianRenderer schema={schema} />}
+      {!type && schema?.data_spec?.nodes && <FlowRenderer schema={schema} />}
+      {!type && schema?.data_spec?.questions && <QuizRenderer schema={schema} />}
+      {!type && schema?.data_spec?.images && <ImageRenderer schema={schema} />}
     </div>
   );
 }

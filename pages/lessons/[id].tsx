@@ -14,10 +14,8 @@ export default function LessonPage() {
   const [lesson, setLesson] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch lesson
   useEffect(() => {
     if (!id) return;
-
     let mounted = true;
 
     async function fetchLesson() {
@@ -28,13 +26,11 @@ export default function LessonPage() {
         .single();
 
       if (!mounted) return;
-
       if (error) {
         console.error(error);
         setLoading(false);
         return;
       }
-
       setLesson(data);
       setLoading(false);
     }
@@ -61,29 +57,29 @@ export default function LessonPage() {
     <div className="min-h-screen bg-gray-950 text-gray-200 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto">
 
-        {/* Back Button */}
+        {/* Back */}
         <button
-          className="mb-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white"
+          className="mb-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm"
           onClick={() => router.push("/")}
         >
           ← Back
         </button>
 
         {/* Title */}
-        <h1 className="text-3xl sm:text-4xl font-bold text-indigo-400 mb-6">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-indigo-400 mb-6">
           {lesson.title}
         </h1>
 
-        {/* MAIN RESPONSIVE LAYOUT */}
+        {/* Layout: column on mobile, two columns on md+ */}
         <div className="flex flex-col md:flex-row gap-6">
 
-          {/* LEFT COLUMN — EXPLANATION */}
-          <div className="w-full md:w-7/12 bg-gray-900 p-6 rounded-xl border border-gray-800">
-            <h2 className="text-2xl font-semibold text-yellow-400 mb-4">
+          {/* Explanation (left on desktop) */}
+          <div className="w-full md:w-7/12 bg-gray-900 p-4 sm:p-6 rounded-xl border border-gray-800">
+            <h2 className="text-xl sm:text-2xl font-semibold text-yellow-400 mb-4">
               💡 Concept Explanation
             </h2>
 
-            <div className="prose prose-invert prose-sm sm:prose-base leading-relaxed">
+            <div className="prose prose-invert prose-sm sm:prose-base leading-relaxed text-sm sm:text-base">
               <ReactMarkdown>
                 {String(lesson.textual_explanation ?? "No explanation provided.")}
               </ReactMarkdown>
@@ -91,7 +87,7 @@ export default function LessonPage() {
 
             <hr className="my-6 border-gray-800" />
 
-            <div className="text-sm text-gray-400">
+            <div className="text-xs sm:text-sm text-gray-400">
               <strong>Key Takeaways</strong>
               <ul className="mt-2 list-disc list-inside space-y-1">
                 <li>Understand the concept clearly</li>
@@ -102,17 +98,20 @@ export default function LessonPage() {
             </div>
           </div>
 
-          {/* RIGHT COLUMN — VISUALIZATION ONLY */}
-          <div className="w-full md:w-5/12 bg-gray-900 p-6 rounded-xl border border-gray-800">
-            <h2 className="text-xl font-semibold text-gray-300 mb-4">
+          {/* Visualization (right on desktop) */}
+          <div className="w-full md:w-5/12 bg-gray-900 p-4 sm:p-6 rounded-xl border border-gray-800">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-300 mb-4">
               Interactive Visualization
             </h2>
 
-            <div className="min-h-[280px] sm:min-h-[360px]">
+            {/* Visualization container:
+                - mobile: small height
+                - md+ (desktop): normal height ~ 420-600 (use md:min-h-520 for normal)
+            */}
+            <div className="w-full min-h-[260px] sm:min-h-[320px] md:min-h-[520px]">
               <VisualHost schema={lesson.visualization_schema} />
             </div>
           </div>
-
         </div>
       </div>
     </div>
