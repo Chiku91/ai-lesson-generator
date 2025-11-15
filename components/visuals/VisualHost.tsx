@@ -31,56 +31,58 @@ export default function VisualHost({ schema }: { schema?: any }) {
   const layoutPrefs = schema.layout ?? {};
 
   if (
-    (title.includes("cycle") || title.includes("water cycle") || layoutPrefs?.layout_kind === "circular") &&
+    (title.includes("cycle") || layoutPrefs?.layout_kind === "circular") &&
     type === "flow"
   ) {
     schema.layout = { ...(schema.layout || {}), layout_kind: "circular" };
   }
 
+  // ⭐ UNIVERSAL SAFE HEIGHT for all renderers
+  const baseWrapper = "w-full max-w-full overflow-x-auto min-h-[320px] sm:min-h-[480px]";
+
   return (
-    <div className="w-full max-w-full overflow-x-auto p-2 sm:p-4">
-      {/* Each renderer placed inside a responsive wrapper */}
-      <div className="w-full max-w-full flex justify-center items-center">
+    <div className="w-full max-w-full p-2 sm:p-4">
+      <div className="w-full flex justify-center items-center">
         {(() => {
           switch (type) {
             case "cartesian":
               return (
-                <div className="w-full sm:w-auto max-w-full overflow-x-auto">
+                <div className={baseWrapper}>
                   <CartesianRenderer schema={schema} />
                 </div>
               );
 
             case "flow":
               return (
-                <div className="w-full max-w-full overflow-x-auto">
+                <div className={baseWrapper}>
                   <FlowRenderer schema={schema} />
                 </div>
               );
 
             case "map":
               return (
-                <div className="w-full max-w-full overflow-x-auto">
+                <div className={baseWrapper}>
                   <MapRenderer schema={schema} />
                 </div>
               );
 
             case "image":
               return (
-                <div className="w-full max-w-full flex justify-center">
+                <div className="w-full max-w-full flex justify-center min-h-[250px]">
                   <ImageRenderer schema={schema} />
                 </div>
               );
 
             case "quiz":
               return (
-                <div className="w-full max-w-full sm:max-w-md mx-auto">
+                <div className="w-full max-w-full sm:max-w-md mx-auto min-h-[200px]">
                   <QuizRenderer schema={schema} />
                 </div>
               );
 
             case "plotly":
               return (
-                <div className="w-full max-w-full overflow-x-auto">
+                <div className={baseWrapper}>
                   <PlotlyRenderer schema={schema} />
                 </div>
               );
