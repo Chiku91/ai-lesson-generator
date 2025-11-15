@@ -13,7 +13,6 @@ export default function LessonPage() {
 
   const [lesson, setLesson] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [showCode, setShowCode] = useState(true);
 
   // Fetch lesson
   useEffect(() => {
@@ -38,9 +37,6 @@ export default function LessonPage() {
 
       setLesson(data);
       setLoading(false);
-
-      const timer = setTimeout(() => setShowCode(false), 15000);
-      return () => clearTimeout(timer);
     }
 
     fetchLesson();
@@ -63,7 +59,6 @@ export default function LessonPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-200 p-4 sm:p-6">
-
       <div className="max-w-6xl mx-auto">
 
         {/* Back Button */}
@@ -82,9 +77,8 @@ export default function LessonPage() {
         {/* MAIN RESPONSIVE LAYOUT */}
         <div className="flex flex-col md:flex-row gap-6">
 
-          {/* LEFT COLUMN (Explanation) */}
+          {/* LEFT COLUMN — EXPLANATION */}
           <div className="w-full md:w-7/12 bg-gray-900 p-6 rounded-xl border border-gray-800">
-
             <h2 className="text-2xl font-semibold text-yellow-400 mb-4">
               💡 Concept Explanation
             </h2>
@@ -108,46 +102,17 @@ export default function LessonPage() {
             </div>
           </div>
 
-          {/* RIGHT COLUMN (Code + Viz) */}
+          {/* RIGHT COLUMN — VISUALIZATION ONLY */}
           <div className="w-full md:w-5/12 bg-gray-900 p-6 rounded-xl border border-gray-800">
-
             <h2 className="text-xl font-semibold text-gray-300 mb-4">
               Interactive Visualization
             </h2>
 
-            {/* Controls */}
-            <div className="mb-4 flex gap-3">
-              {showCode ? (
-                <button
-                  className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-white"
-                  onClick={() => setShowCode(false)}
-                >
-                  🚀 Show Visualization
-                </button>
-              ) : (
-                <button
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-white"
-                  onClick={() => setShowCode(true)}
-                >
-                  🔄 Back to Code
-                </button>
-              )}
+            <div className="min-h-[280px] sm:min-h-[360px]">
+              <VisualHost schema={lesson.visualization_schema} />
             </div>
-
-            {/* CONTENT AREA */}
-            <div className="min-h-[260px] sm:min-h-[360px]">
-
-              {showCode ? (
-                <pre className="bg-gray-950 text-green-300 p-4 rounded-lg overflow-x-auto text-xs sm:text-sm">
-                  {lesson.generated_code ?? "No generated code available."}
-                </pre>
-              ) : (
-                <VisualHost schema={lesson.visualization_schema} />
-              )}
-
-            </div>
-
           </div>
+
         </div>
       </div>
     </div>
