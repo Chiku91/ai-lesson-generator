@@ -10,11 +10,7 @@ Here is a demo video to show the working of my app
 https://drive.google.com/drive/folders/1ZZ7T3U93UbylnFof0kO3Dry-tmvFoGGF?usp=drive_link
 
 
-
-
-
-
-NovaLearn AI is a fully-automated lesson generator built using **Next.js 16**, **Supabase**, **OpenAI**, and fully typed **TSX visualization components**.
+**NovaLearn AI** is a fully-automated lesson generator built using **Next.js 16**, **Supabase**, **OpenAI**, and fully typed **TSX visualization components**.
 
 It transforms any topic into:
 
