@@ -3,14 +3,40 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
 import { serverSupabase } from "@/lib/supabase/serverSupabase";
 import ts from "typescript";
+import { randomUUID } from "crypto";
 
+// ---------------------------------------------------------------------------
+// Helicone Logger
+// ---------------------------------------------------------------------------
+async function heliconeLog(payload: any) {
+  if (!process.env.HELICONE_API_KEY) return;
+
+  try {
+    await fetch("https://api.helicone.ai/v1/trace/log", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.HELICONE_API_KEY}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {}
+}
+
+// ---------------------------------------------------------------------------
+// OpenAI via Helicone Gateway
+// ---------------------------------------------------------------------------
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: "https://oai.helicone.ai/v1",
+  defaultHeaders: {
+    "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
+  },
 });
 
-// ----------------------------------------------------
-// TSX VALIDATOR
-// ----------------------------------------------------
+// ---------------------------------------------------------------------------
+// TSX Validator
+// ---------------------------------------------------------------------------
 function validateTSX(code: string) {
   const out = ts.transpileModule(code, {
     compilerOptions: {
@@ -22,147 +48,141 @@ function validateTSX(code: string) {
     reportDiagnostics: true,
   });
 
-  const diagnostics = out.diagnostics ?? [];
-  const errors = diagnostics.map((d) =>
-    ts.flattenDiagnosticMessageText(d.messageText, "\n")
-  );
+  const errors =
+    out.diagnostics?.map((d) =>
+      ts.flattenDiagnosticMessageText(d.messageText, "\n")
+    ) ?? [];
 
   return { ok: errors.length === 0, errors };
 }
 
-// ----------------------------------------------------
-// SYSTEM PROMPT (VERY STRICT)
-// ----------------------------------------------------
+// ---------------------------------------------------------------------------
+// **NEW FIXED SYSTEM PROMPT** — Guarantees correct visualization_type
+// ---------------------------------------------------------------------------
 const SYSTEM_PROMPT = `
-You must return STRICT JSON ONLY:
+You must ALWAYS return **exactly one JSON object**.  
+If you violate ANY rule, return ONLY:
+{ "error": "FORMAT_ERROR" }
+
+Your JSON must follow EXACT schema:
 
 {
-  "explanation": "LONG structured markdown (900–1300 words)",
-  "tsx": "export default function LessonViz(props: LessonVizProps) { ... }",
-  "visualization_type": "...",
-  "visualization_schema": { ... }
+  "explanation": "string (900-1300 words, markdown allowed)",
+  "tsx": "string (valid TSX: must contain interface LessonVizProps { topic: string } AND export default function LessonViz(props: LessonVizProps))",
+  "visualization_type": "flow" | "quiz" | "image" | "cartesian",
+  "visualization_schema": {}
 }
 
-=====================================================
-RULES FOR EXPLANATION:
-=====================================================
-- MINIMUM 900 words, MAXIMUM 1300.
-- Use headings, subheadings, bullets, numbering.
-- Use emojis (📘✨📌🧠🌱➡️).
-- Include intro, breakdown, examples, deep explanation, key takeaways.
+STRICT RULES (follow EXACTLY):
 
-=====================================================
-RULES FOR TSX:
-=====================================================
-- STRICT TSX ONLY.
-- MUST contain: interface LessonVizProps { topic: string }
-- Must EXPORT: export default function LessonViz(props: LessonVizProps)
-- Everything fully typed.
-- NO markdown inside TSX.
+1. NEVER output text outside JSON.
+2. NO markdown outside JSON strings.
+3. visualization_type MUST be EXACTLY one of:
+   - "cartesian"
+   - "image"
+   - "flow"
+   - "quiz"
 
-=====================================================
-RULES FOR FLOW DIAGRAMS:
-=====================================================
-{
- "type": "flow",
- "data_spec": {
-   "nodes": [{ "id": "", "label": "", "description": "" }],
-   "edges": [["a","b"]]
- }
-}
+4. Mandatory Classification Rules:
+   If topic contains ANY of:
+     "cartesian", "coordinate", "distance", "midpoint", "graph", "plot", "points"
+     → visualization_type = "cartesian"
 
-=====================================================
-RULES FOR QUIZ:
-=====================================================
-{
- "type": "quiz",
- "data_spec": {
-   "questions": [
-     { "q":"", "options":["A","B","C","D"], "answer":"A" }
-   ]
- }
-}
+   If topic contains:
+     "image", "images", "picture", "pictures", "photos"
+     → visualization_type = "image"
 
-=====================================================
-RULES FOR IMAGE VISUALIZATION:
-=====================================================
-If topic mentions:
-"using images", "with images", "using pictures", "photos"
+   If topic contains:
+     "flowchart", "steps", "workflow", "process"
+     → visualization_type = "flow"
 
-Then MUST produce:
+   If topic contains:
+     "quiz", "mcq", "test", "questions"
+     → visualization_type = "quiz"
 
-{
- "type": "image",
- "data_spec": {
-   "images": [
-     { "src":"", "title":"", "caption":"", "alt":"" }
-   ]
- },
- "explanatory_markup": "<p>Explanation...</p>"
-}
+5. visualization_schema rules:
 
-=====================================================
-RULES FOR CARTESIAN VISUALS:
-=====================================================
-If topic contains:
-"cartesian", "coordinate", "distance formula",
-"midpoint", "plot points", "graph points"
+   For "cartesian":
+   {
+     "type": "cartesian",
+     "data_spec": {
+       "A": { "x": number, "y": number },
+       "B": { "x": number, "y": number }
+     },
+     "layout": { "width": 420, "height": 380 }
+   }
 
-Must output:
+   For "image":
+   {
+     "type": "image",
+     "data_spec": {
+       "images": [
+         { "src": "string", "title": "string", "caption": "string", "alt": "string" }
+       ]
+     },
+     "explanatory_markup": "string"
+   }
 
-{
- "type": "cartesian",
- "data_spec": {
-   "A": { "x": number, "y": number },
-   "B": { "x": number, "y": number }
- },
- "layout": { "width":420, "height":380 }
-}
+   For "quiz":
+   {
+     "type": "quiz",
+     "data_spec": {
+       "questions": [
+         { "q": "string", "options": ["A","B","C","D"], "answer": "A" }
+       ]
+     }
+   }
 
-=====================================================
-FOLLOW RULES EXACTLY.
-=====================================================
+   For "flow":
+   {
+     "type": "flow",
+     "data_spec": {
+       "nodes": [
+         { "id": "string", "label": "string", "description": "string" }
+       ],
+       "edges": [
+         ["a","b"]
+       ]
+     }
+   }
 `;
 
-// ----------------------------------------------------
-// IMAGE FALLBACK
-// ----------------------------------------------------
+// ---------------------------------------------------------------------------
+// Fallback image
+// ---------------------------------------------------------------------------
 function fallbackImages(topic: string) {
   return {
     type: "image",
     data_spec: {
       images: [
         {
-          src: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Plant_cell_structure.png/640px-Plant_cell_structure.png",
-          title: `${topic} — Diagram 1`,
-          caption: "AI fallback image (auto-applied).",
+          src: "https://upload.wikimedia.org/wikipedia/commons/3/32/Plant_cell_structure.png",
+          title: `${topic} — Diagram`,
+          caption: "Fallback image",
           alt: `${topic} diagram`,
         },
       ],
     },
-    explanatory_markup: "<p>AI fallback image applied.</p>",
+    explanatory_markup: "<p>Fallback image applied.</p>",
   };
 }
 
-// ----------------------------------------------------
+// ---------------------------------------------------------------------------
 // MAIN HANDLER
-// ----------------------------------------------------
+// ---------------------------------------------------------------------------
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log("\n===========================================");
-  console.log("🚀 NEW LESSON GENERATION STARTED");
-  console.log("===========================================\n");
+  console.log("🔥 Helicone Key:", !!process.env.HELICONE_API_KEY);
+  console.log("🔥 OpenAI Key:", !!process.env.OPENAI_API_KEY);
 
   if (req.method !== "POST")
     return res.status(405).json({ error: "Method not allowed" });
 
   const { outline } = req.body;
+  if (!outline) return res.status(400).json({ error: "Outline required" });
 
-  console.log("📘 Topic received:", outline);
+  const topic = outline.toLowerCase();
 
-  if (!outline?.trim())
-    return res.status(400).json({ error: "Outline required" });
-
-  // Insert placeholder row
+  // Insert placeholder into DB
   const { data: inserted } = await serverSupabase
     .from("lessons_v3")
     .insert({ outline, status: "generating" })
@@ -170,10 +190,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .single();
 
   const lessonId = inserted.id;
-  const topic = outline.toLowerCase();
+  const sessionId = randomUUID();
 
-  console.log("🗂 Saved placeholder DB entry:", lessonId);
+  await heliconeLog({
+    type: "session_start",
+    session_id: sessionId,
+    outline,
+    lessonId,
+  });
 
+  // Image rule
   const wantsImages =
     topic.includes("image") ||
     topic.includes("images") ||
@@ -181,81 +207,88 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     topic.includes("pictures") ||
     topic.includes("photos");
 
+  // -----------------------------------------------------------------------
+  // LLM CALL
+  // -----------------------------------------------------------------------
   async function callAI() {
-    console.log("🤖 Calling OpenAI model...");
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `Topic: ${outline}` },
-      ],
-      temperature: 0.2,
-      max_tokens: 5000,
-    });
-    return completion.choices[0].message?.content ?? "";
+    const completion = await openai.chat.completions.create(
+      {
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: `Topic: ${outline}` },
+        ],
+        max_tokens: 5000,
+        temperature: 0.2,
+      },
+      {
+        headers: {
+          "Helicone-Session-Id": sessionId,
+          "Helicone-Property-LessonId": String(lessonId),
+          "Helicone-Property-Topic": outline,
+        },
+      }
+    );
+
+    const content = completion.choices[0].message?.content ?? "";
+    console.log("📩 RAW:", content.slice(0, 500));
+    return content;
   }
 
-  let final = null;
-
-  console.log("\n🔁 Starting TSX generation attempts...\n");
+  // -----------------------------------------------------------------------
+  // MULTI-ATTEMPT GENERATION
+  // -----------------------------------------------------------------------
+  let final: any = null;
 
   for (let attempt = 1; attempt <= 6; attempt++) {
-    console.log(`---------------- Attempt ${attempt} ----------------`);
+    console.log(`\n⚡ Attempt ${attempt}`);
 
-    let raw: string = await callAI();
+    const raw = await callAI();
+    console.log("RAW:", raw.slice(0, 500));
 
-    let parsed: any = null;
+    let parsed = null;
+
+    // JSON parse attempt
     try {
       parsed = JSON.parse(raw.trim());
-      console.log("✅ JSON parsed successfully.");
-    } catch (e) {
-      console.log("❌ JSON parse failed. Trying rescue parse...");
+      console.log("✅ Parsed normally");
+    } catch {
+      console.log("❌ Normal parse failed");
       const m = raw.match(/\{[\s\S]*\}$/m);
       if (m) {
         try {
           parsed = JSON.parse(m[0]);
-          console.log("🛟 Rescue JSON parse successful.");
+          console.log("🛟 Rescue parse OK");
         } catch {
-          console.log("❌ Rescue JSON parse failed.");
+          console.log("❌ Rescue parse failed");
         }
       }
     }
 
-    if (!parsed) {
-      console.log("⚠ No valid JSON — retrying...\n");
-      continue;
-    }
+    if (!parsed) continue;
 
-    // Force image type when needed
+    // ---- FIX: Force image fallback ----
     if (wantsImages) {
-      console.log("🖼 Topic requires IMAGES. Overriding visualization_type → image");
       parsed.visualization_type = "image";
 
-      const imgs = parsed?.visualization_schema?.data_spec?.images;
-      if (!imgs || !Array.isArray(imgs) || imgs.length === 0) {
-        console.log("⚠ No images generated — applying fallback image.");
+      if (!parsed.visualization_schema?.data_spec?.images) {
         parsed.visualization_schema = fallbackImages(outline);
       }
     }
 
-    // Validate TSX
-    console.log("🧪 Validating TSX...");
+    // ---- FIX: Validate TSX ----
     const v = validateTSX(parsed.tsx);
+    console.log("TSX Validation:", v);
+    if (!v.ok) continue;
 
-    if (!v.ok) {
-      console.log("❌ TSX FAILED:");
-      console.log(v.errors);
-      console.log("⏳ Retrying...\n");
-      continue;
-    }
-
-    console.log("🎉 TSX VALID! Generation successful on attempt", attempt);
     final = parsed;
     break;
   }
 
+  // -----------------------------------------------------------------------
+  // FAILURE
+  // -----------------------------------------------------------------------
   if (!final) {
-    console.log("❌ ALL ATTEMPTS FAILED — MARKING AS FAILED");
     await serverSupabase
       .from("lessons_v3")
       .update({ status: "failed" })
@@ -264,8 +297,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: "AI generation failed" });
   }
 
-  console.log("\n💾 Saving final lesson to database...");
-
+  // -----------------------------------------------------------------------
+  // SAVE SUCCESSFUL RESULT
+  // -----------------------------------------------------------------------
   await serverSupabase
     .from("lessons_v3")
     .update({
@@ -278,9 +312,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
     .eq("id", lessonId);
 
-  console.log("✅ LESSON SAVED SUCCESSFULLY!");
-  console.log("📦 Returning lesson ID:", lessonId);
-  console.log("===========================================\n");
-
-  return res.status(200).json({ id: lessonId });
+  return res.status(200).json({ id: lessonId, session_id: sessionId });
 }
