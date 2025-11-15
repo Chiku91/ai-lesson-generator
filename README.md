@@ -5,7 +5,7 @@ Here is the Deployed Project link on Vercel :
 
 https://ai-lesson-generator-e4186lee9-priyanshu-satapathys-projects.vercel.app/
 
-Here is a demo video to show the working of my app
+Here is a demo video to show the working of my app:
 
 https://drive.google.com/drive/folders/1ZZ7T3U93UbylnFof0kO3Dry-tmvFoGGF?usp=drive_link
 
